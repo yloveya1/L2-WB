@@ -1,4 +1,4 @@
-module github.com/yloveya1/ex1
+module github.com/yloveya1/L2-WB/develop/ex1
 
 go 1.19
 
