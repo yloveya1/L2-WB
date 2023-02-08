@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-func ex1() (time.Time, error) {
+func Ex1() (time.Time, error) {
 	time, err := ntp.Time("0.beevik-ntp.pool.ntp.org")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
