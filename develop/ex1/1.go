@@ -9,7 +9,7 @@
 Программа должна корректно обрабатывать ошибки библиотеки: выводить их в STDERR и возвращать ненулевой код выхода в OS
 */
 
-package ex1
+package main
 
 import (
 	"fmt"
@@ -18,11 +18,11 @@ import (
 	"time"
 )
 
-func Ex1() (time.Time, error) {
+func GetTime() (time.Time, error) {
 	time, err := ntp.Time("0.beevik-ntp.pool.ntp.org")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
-		return time, err
+		os.Exit(1)
 	}
 	return time, nil
 }
