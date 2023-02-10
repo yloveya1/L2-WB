@@ -27,6 +27,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
+	"strconv"
+	"strings"
 )
 
 type fflags struct {
@@ -34,24 +37,6 @@ type fflags struct {
 	sortNum bool
 	sortRev bool
 	notDupl bool
-}
-
-func main() {
-	flags := fflags{}
-	flags.sortCol = *flag.Int("k", 1, "указание колонки для сортировки")
-	flags.sortNum = *flag.Bool("n", false, "сортировать по числовому значению")
-	flags.sortRev = *flag.Bool("r", false, "сортировать в обратном порядке")
-	flags.notDupl = *flag.Bool("u", false, "не выводить повторяющиеся строки")
-	flag.Parse()
-	filename := flag.Arg(0)
-	lines, err := readLines(filename)
-	if err != nil {
-		log.Fatalf("readLines: %s", err)
-	}
-	for _, line := range lines {
-		fmt.Println(line)
-	}
-
 }
 
 func readLines(path string) ([]string, error) {
@@ -68,17 +53,98 @@ func readLines(path string) ([]string, error) {
 	return lines, scanner.Err()
 }
 
-// writeLines writes the lines to the given file.txt.
-func writeLines(lines []string, path string) error {
-	file, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+//// writeLines writes the lines to the given file.txt.
+//func writeLines(lines []string, path string) error {
+//	file, err := os.Create(path)
+//	if err != nil {
+//		return err
+//	}
+//	defer file.Close()
+//
+//	w := bufio.NewWriter(file)
+//	for _, line := range lines {
+//		fmt.Fprintln(w, line)
+//	}
+//	return w.Flush()
+//}
 
-	w := bufio.NewWriter(file)
-	for _, line := range lines {
-		fmt.Fprintln(w, line)
+func sortCol(flags fflags, max int, splitStr [][]string) {
+	k := flags.sortCol
+	if k < 1 {
+		log.Fatalf("sort: -k %d: Invalid argument", k)
+	} else if k > 0 {
+
+		if k > max {
+			k = 1
+		}
+
+		sort.Slice(splitStr, func(i, j int) bool {
+
+			if flags.sortRev {
+				return strings.Join(splitStr[i][k-1:], " ") > strings.Join(splitStr[j][k-1:], " ")
+			}
+			return strings.Join(splitStr[i][k-1:], " ") < strings.Join(splitStr[j][k-1:], " ")
+
+		})
+
 	}
-	return w.Flush()
+}
+
+func main() {
+	flags := fflags{}
+	flag.IntVar(&flags.sortCol, "k", 1, "указание колонки для сортировки")
+	flag.BoolVar(&flags.sortRev, "r", false, "сортировать в обратном порядке")
+	flag.BoolVar(&flags.notDupl, "u", false, "не выводить повторяющиеся строки")
+	flag.BoolVar(&flags.sortNum, "n", false, "сортировать по числовому значению")
+	flag.Parse()
+	filename := flag.Arg(0)
+	lines, err := readLines(filename)
+	if err != nil {
+		log.Fatalf("readLines: %s", err)
+	}
+	var strFile []string
+
+	for _, line := range lines {
+		strFile = append(strFile, line)
+	}
+
+	if flags.notDupl {
+		var uniqueFile []string
+		var temp string
+		for _, str := range strFile {
+			if str != temp {
+				uniqueFile = append(uniqueFile, str)
+			}
+			temp = str
+		}
+		strFile = uniqueFile
+	}
+
+	max := 0
+	var splitStr [][]string
+
+	for _, v := range strFile {
+		str := strings.Fields(v)
+		splitStr = append(splitStr, str)
+		if len(str) > max {
+			max = len(str)
+		}
+	}
+
+	if flags.sortNum {
+		sort.Slice(splitStr, func(i, j int) bool {
+			f, _ := strconv.ParseFloat(splitStr[i][0], 64)
+			s, _ := strconv.ParseFloat(splitStr[j][0], 64)
+			return f < s
+		})
+	} else {
+		sortCol(flags, max, splitStr)
+
+	}
+	//splitStr := sortCol(flags, strFile)
+
+	for _, v := range splitStr {
+		fmt.Println(strings.Join(v, " "))
+	}
+
 }
